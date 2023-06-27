@@ -36,6 +36,20 @@ func (svcRepo *serviceRepoImpl) Get(id int) (*model.ServiceModel, error) {
 	return svc, nil
 }
 
+func (svcRepo *serviceRepoImpl) FindByName(name string) (*model.ServiceModel, error) {
+	qry := "SELECT id, name, uom, price FROM ms_service WHERE name = $1"
+
+	svc := &model.ServiceModel{}
+	err := svcRepo.db.QueryRow(qry, name).Scan(&svc.Id, &svc.Name, &svc.Uom, &svc.Price)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error on serviceRepoImpl.GetServiceByName() : %w", err)
+	}
+	return svc, nil
+}
+
 func (svcRepo *serviceRepoImpl) List() (*[]model.ServiceModel, error) {
 	qry := "SELECT id, name, uom, price FROM ms_service"
 	rows, err := svcRepo.db.Query(qry)

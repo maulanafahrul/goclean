@@ -70,7 +70,13 @@ func (svcHandler serviceHandlerImpl) GetAllService(ctx *gin.Context) {
 
 func (svcHandler serviceHandlerImpl) AddService(ctx *gin.Context) {
 	payload := &model.ServiceModel{}
-	if err := ctx.ShouldBindJSON(&payload); err 
+	if err := ctx.ShouldBindJSON(&payload); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"success":      false,
+			"errorMessage": "Invalid JSON data",
+		})
+		return
+	}
 }
 
 func NewServiceHandler(srv *gin.Engine, svcUsecase usecase.ServiceUsecase) ServiceHandler {
