@@ -11,6 +11,7 @@ type ServiceRepo interface {
 	FindByName(string) (*model.ServiceModel, error)
 	List() (*[]model.ServiceModel, error)
 	Create(*model.ServiceModel) error
+	Update(*model.ServiceModel) error
 }
 
 type serviceRepoImpl struct {
@@ -67,11 +68,19 @@ func (svcRepo *serviceRepoImpl) List() (*[]model.ServiceModel, error) {
 	return &arrSvc, nil
 }
 
-func (svcRepo *serviceRepoImpl) Create(scv *model.ServiceModel) error {
+func (svcRepo *serviceRepoImpl) Create(svc *model.ServiceModel) error {
 	qry := "INSERT INTO ms_service(name, uom, price) VALUES($1, $2, $3)"
-	_, err := svcRepo.db.Exec(qry, scv.Name, scv.Uom, scv.Price)
+	_, err := svcRepo.db.Exec(qry, svc.Name, svc.Uom, svc.Price)
 	if err != nil {
 		return fmt.Errorf("error on serviceRepoImpl.Create() : %w", err)
+	}
+	return nil
+}
+func (svcRepo *serviceRepoImpl) Update(svc *model.ServiceModel) error {
+	qry := "UPDATE ms_service SET name=$1, uom=$2,  price=$3 WHERE id=$4"
+	_, err := svcRepo.db.Exec(qry, svc.Name, svc.Uom, svc.Price, svc.Id)
+	if err != nil {
+		return fmt.Errorf("error on serviceRepoImpl.Update() : %w", err)
 	}
 	return nil
 }

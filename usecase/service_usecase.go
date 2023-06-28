@@ -12,6 +12,7 @@ type ServiceUsecase interface {
 	Get(int) (*model.ServiceModel, error)
 	List() (*[]model.ServiceModel, error)
 	Create(*model.ReqService) error
+	Update(*model.ReqService) error
 }
 
 type serviceUsecaseImpl struct {
@@ -28,7 +29,7 @@ func (svcUsecase *serviceUsecaseImpl) List() (*[]model.ServiceModel, error) {
 func (svcUsecase *serviceUsecaseImpl) Create(payload *model.ReqService) error {
 	payloadDB, err := svcUsecase.svcRepo.FindByName(payload.Name)
 	if err != nil {
-		return fmt.Errorf("serviceUsecaseImpl.InsertService() : %w", err)
+		return fmt.Errorf("serviceUsecaseImpl.Create() : %w", err)
 	}
 	if payloadDB != nil {
 		return apperror.AppError{
@@ -43,6 +44,28 @@ func (svcUsecase *serviceUsecaseImpl) Create(payload *model.ReqService) error {
 	svc.Price = sql.NullFloat64{Float64: payload.Price, Valid: true}
 
 	return svcUsecase.svcRepo.Create(svc)
+}
+
+func (svcUsecase *serviceUsecaseImpl) Update(payload *model.ReqService) error {
+	payloadDB, err := svcUsecase.svcRepo.FindByName(payload.Name)
+	if err != nil {
+		return fmt.Errorf("serviceUsecaseImpl.Update() : %w", err)
+	}
+	if payloadDB == nil {
+		return apperror.AppError{
+			ErrorCode:    1,
+			ErrorMassage: fmt.Sprintf("data service dengan nama %v belum ada", payload.Name),
+		}
+	}
+	// konvert
+	svc := &model.ServiceModel{}
+	svc.Id = payloadDB.Id
+	svc.Name = sql.NullString{String: payload.Name, Valid: true}
+	svc.Uom = sql.NullString{String: payload.Uom, Valid: true}
+	svc.Price = sql.NullFloat64{Float64: payload.Price, Valid: true}
+
+	return svcUsecase.svcRepo.Update(svc)
+
 }
 
 func NewServiceUseCase(svcRepo repo.ServiceRepo) ServiceUsecase {
