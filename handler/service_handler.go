@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
+	"goclean/apperror"
 	"goclean/model"
 	"goclean/usecase"
 	"net/http"
@@ -17,7 +19,7 @@ type serviceHandlerImpl struct {
 	svcUsecase usecase.ServiceUsecase
 }
 
-func (svcHandler serviceHandlerImpl) GetServiceById(ctx *gin.Context) {
+func (svcHandler serviceHandlerImpl) GetServiceByIdHandler(ctx *gin.Context) {
 	idText := ctx.Param("id")
 	if idText == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -52,7 +54,7 @@ func (svcHandler serviceHandlerImpl) GetServiceById(ctx *gin.Context) {
 	})
 }
 
-func (svcHandler serviceHandlerImpl) GetAllService(ctx *gin.Context) {
+func (svcHandler serviceHandlerImpl) GetAllServiceHandler(ctx *gin.Context) {
 	svc, err := svcHandler.svcUsecase.List()
 	if err != nil {
 		fmt.Printf("serviceHandlerImpl.GetAllService() : %v ", err.Error())
@@ -68,8 +70,8 @@ func (svcHandler serviceHandlerImpl) GetAllService(ctx *gin.Context) {
 	})
 }
 
-func (svcHandler serviceHandlerImpl) AddService(ctx *gin.Context) {
-	payload := &model.ServiceModel{}
+func (svcHandler serviceHandlerImpl) AddServiceHandler(ctx *gin.Context) {
+	payload := &model.ReqService{}
 	if err := ctx.ShouldBindJSON(&payload); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success":      false,
@@ -77,15 +79,45 @@ func (svcHandler serviceHandlerImpl) AddService(ctx *gin.Context) {
 		})
 		return
 	}
+	// validate
+	if len(payload.Name) > 15 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"success":      false,
+			"errorMessage": "Panjang Nama tidak boleh lebih dari 15 karakter",
+		})
+		return
+	}
+	err := svcHandler.svcUsecase.Create(payload)
+	if err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf("ServiceHandler.Create() 1 : %v ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":      false,
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			fmt.Printf("ServiceHandler.Create() 2 : %v ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":      false,
+				"errorMessage": "Terjadi kesalahan ketika menyimpan data service",
+			})
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+	})
 }
 
 func NewServiceHandler(srv *gin.Engine, svcUsecase usecase.ServiceUsecase) ServiceHandler {
 	svcHandler := &serviceHandlerImpl{
 		svcUsecase: svcUsecase,
 	}
-	srv.GET("/service", svcHandler.GetAllService)
-	srv.GET("/service/:id", svcHandler.GetServiceById)
-	srv.POST("/service", svcHandler.AddService)
+	srv.GET("/service", svcHandler.GetAllServiceHandler)
+	srv.GET("/service/:id", svcHandler.GetServiceByIdHandler)
+	srv.POST("/service", svcHandler.AddServiceHandler)
 
 	return svcHandler
 }
