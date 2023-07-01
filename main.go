@@ -24,5 +24,9 @@ func main() {
 	svcUsecase := usecase.NewServiceUseCase(svcRepo)
 	handler.NewServiceHandler(srv, svcUsecase)
 
+	trxRepo := repo.NewTransactionRepo(db)
+	trxUsecase := usecase.NewTransactionUsecase(trxRepo)
+	handler.NewTransactionHandler(srv, trxUsecase)
+
 	srv.Run()
 }

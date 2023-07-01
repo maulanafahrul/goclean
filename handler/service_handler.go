@@ -47,6 +47,13 @@ func (svcHandler serviceHandlerImpl) GetServiceByIdHandler(ctx *gin.Context) {
 		})
 		return
 	}
+	if svc == nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success":      false,
+			"errorMessage": fmt.Sprintf("data dengan id: %d tidak ada", id),
+		})
+		return
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -155,7 +162,7 @@ func (svcHandler serviceHandlerImpl) UpdateServiceHandler(ctx *gin.Context) {
 			fmt.Printf("ServiceHandler.Update() 2 : %v ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"success":      false,
-				"errorMessage": "Terjadi kesalahan ketika menyimpan data service",
+				"errorMessage": "Terjadi kesalahan ketika update data service",
 			})
 		}
 		return
@@ -166,6 +173,49 @@ func (svcHandler serviceHandlerImpl) UpdateServiceHandler(ctx *gin.Context) {
 	})
 }
 
+func (svcHandler serviceHandlerImpl) DeleteServiceHandler(ctx *gin.Context) {
+	idText := ctx.Param("id")
+	if idText == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"success":      false,
+			"errorMessage": "Id tidak boleh kosong",
+		})
+		return
+	}
+
+	id, err := strconv.Atoi(idText)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"success":      false,
+			"errorMessage": "Id harus angka",
+		})
+		return
+	}
+	err = svcHandler.svcUsecase.Delete(id)
+	if err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf("ServiceHandler.Delete() 1 : %v ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":      false,
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			fmt.Printf("ServiceHandler.Delete() 2 : %v ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":      false,
+				"errorMessage": "Terjadi kesalahan ketika Delete data service",
+			})
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+	})
+
+}
+
 func NewServiceHandler(srv *gin.Engine, svcUsecase usecase.ServiceUsecase) ServiceHandler {
 	svcHandler := &serviceHandlerImpl{
 		svcUsecase: svcUsecase,
@@ -174,6 +224,7 @@ func NewServiceHandler(srv *gin.Engine, svcUsecase usecase.ServiceUsecase) Servi
 	srv.GET("/service/:id", svcHandler.GetServiceByIdHandler)
 	srv.POST("/service", svcHandler.AddServiceHandler)
 	srv.PUT("/service", svcHandler.UpdateServiceHandler)
+	srv.DELETE("/service/:id", svcHandler.DeleteServiceHandler)
 
 	return svcHandler
 }

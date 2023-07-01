@@ -13,6 +13,7 @@ type ServiceUsecase interface {
 	List() (*[]model.ServiceModel, error)
 	Create(*model.ReqService) error
 	Update(*model.ReqService) error
+	Delete(int) error
 }
 
 type serviceUsecaseImpl struct {
@@ -66,6 +67,21 @@ func (svcUsecase *serviceUsecaseImpl) Update(payload *model.ReqService) error {
 
 	return svcUsecase.svcRepo.Update(svc)
 
+}
+
+func (svcUsecase *serviceUsecaseImpl) Delete(id int) error {
+	svc, err := svcUsecase.svcRepo.Get(id)
+	if err != nil {
+		return fmt.Errorf("serviceUsecaseImpl.Delete() : %w", err)
+	}
+	if svc == nil {
+		return apperror.AppError{
+			ErrorCode:    1,
+			ErrorMassage: fmt.Sprintf("data service dengan id %d belum ada", id),
+		}
+	}
+
+	return svcUsecase.svcRepo.Delete(id)
 }
 
 func NewServiceUseCase(svcRepo repo.ServiceRepo) ServiceUsecase {
