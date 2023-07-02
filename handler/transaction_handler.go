@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
+	"goclean/apperror"
 	"goclean/model"
 	"goclean/usecase"
 	"net/http"
@@ -41,6 +43,28 @@ func (trxHandler transactionHandlerImpl) addTransactionHandler(ctx *gin.Context)
 		})
 		return
 	}
+	err := trxHandler.trxUsecase.Create(&trxheader)
+	if err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf("trxHandler.Create() 1 : %v ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":      false,
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			fmt.Printf("trxHandler.Create() 2 : %v ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success":      false,
+				"errorMessage": "Terjadi kesalahan ketika menyimpan data transaction",
+			})
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+	})
 
 }
 
