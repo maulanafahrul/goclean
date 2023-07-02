@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"goclean/apperror"
@@ -101,7 +102,13 @@ func (svcHandler serviceHandlerImpl) AddServiceHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	err := svcHandler.svcUsecase.Create(payload)
+	// konvert
+	svc := &model.ServiceModel{}
+	svc.Name = sql.NullString{String: payload.Name, Valid: true}
+	svc.Uom = sql.NullString{String: payload.Uom, Valid: true}
+	svc.Price = sql.NullFloat64{Float64: payload.Price, Valid: true}
+
+	err := svcHandler.svcUsecase.Create(svc)
 	if err != nil {
 		appError := apperror.AppError{}
 		if errors.As(err, &appError) {
@@ -149,7 +156,11 @@ func (svcHandler serviceHandlerImpl) UpdateServiceHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	err := svcHandler.svcUsecase.Update(payload)
+	svc := &model.ServiceModel{}
+	svc.Name = sql.NullString{String: payload.Name, Valid: true}
+	svc.Uom = sql.NullString{String: payload.Uom, Valid: true}
+	svc.Price = sql.NullFloat64{Float64: payload.Price, Valid: true}
+	err := svcHandler.svcUsecase.Update(svc)
 	if err != nil {
 		appError := apperror.AppError{}
 		if errors.As(err, &appError) {

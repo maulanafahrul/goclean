@@ -8,7 +8,7 @@ import (
 
 type ServiceRepo interface {
 	Get(int) (*model.ServiceModel, error)
-	FindByName(string) (*model.ServiceModel, error)
+	FindByName(sql.NullString) (*model.ServiceModel, error)
 	List() (*[]model.ServiceModel, error)
 	Create(*model.ServiceModel) error
 	Update(*model.ServiceModel) error
@@ -39,7 +39,7 @@ func (svcRepo *serviceRepoImpl) Get(id int) (*model.ServiceModel, error) {
 	return svc, nil
 }
 
-func (svcRepo *serviceRepoImpl) FindByName(name string) (*model.ServiceModel, error) {
+func (svcRepo *serviceRepoImpl) FindByName(name sql.NullString) (*model.ServiceModel, error) {
 	qry := "SELECT id, name, uom, price FROM ms_service WHERE name = $1"
 
 	svc := &model.ServiceModel{}
